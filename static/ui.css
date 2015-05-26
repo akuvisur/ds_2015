@@ -1,0 +1,115 @@
+body {
+	font-family: 'Open Sans';
+	font-size: 14px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 500;
+	line-height: 15.3999996185303px;
+}
+
+h1 {
+	font-family: 'Open Sans';
+	font-size: 24px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 500;
+	line-height: 26.3999996185303px;
+}
+h3 {
+	font-family: 'Open Sans';
+	font-size: 14px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 500;
+	line-height: 15.3999996185303px;
+}
+p {
+	font-family: 'Open Sans';
+	font-size: 14px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 400;
+	line-height: 20px;
+}
+blockquote {
+	font-family: 'Open Sans';
+	font-size: 21px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 400;
+	line-height: 30px;
+}
+pre {
+	font-family: 'Open Sans';
+	font-size: 13px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 400;
+	line-height: 18.5714282989502px;
+}
+
+.hashes, .hashes_solved, .clients {
+	margin-bottom: 10px;
+}
+
+#new_hash {
+	margin: 6px;
+	height: 20px;
+	padding: 10px;
+  	border: solid 1px #dcdcdc;
+  	transition: box-shadow 0.3s, border 0.3s;
+}
+
+#new_hash :focus,
+#new_hash .focus {
+  border: solid 1px #707070;
+  box-shadow: 0 0 5px 1px #969696;
+}
+
+.submit_button {
+	-moz-box-shadow: 0px 1px 0px 0px #1c1b18;
+	-webkit-box-shadow: 0px 1px 0px 0px #1c1b18;
+	box-shadow: 0px 1px 0px 0px #1c1b18;
+	background-color:#eae0c2;
+	-moz-border-radius:15px;
+	-webkit-border-radius:15px;
+	border-radius:15px;
+	border:2px solid #333029;
+	display:inline-block;
+	cursor:pointer;
+	color:#505739;
+	font-family:Trebuchet MS;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 9px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+}
+.submit_button:hover {
+	background-color:#ccc2a6;
+}
+.submit_button:active {
+	position:relative;
+	top:1px;
+}
+
+.hash_row {
+	margin: 6px;
+	background-color: #99FFCC;
+	min-width: 300px;
+	padding: 3px;
+}
+
+.client_row {
+	margin: 6px;
+	background-color: #FFFF66;
+	min-width: 300px;
+	padding: 3px;
+}
+
+.hash_row_solved {
+	margin: 6px;
+	background-color: #6699FF;
+	min-width: 300px;
+	padding: 3px;
+}
