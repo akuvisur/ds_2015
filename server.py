@@ -59,42 +59,65 @@ def start_crack():
         return "No hashes to solve!"
     f = open("wordlists/dictionary_huge_" + character + ".dic", 'r')
     rowcount = 0
-    for row in f.readlines():
+    readrows = 0
+    while readrows < db_model.CHUNK_SIZE:
+        row = f.readline()
         ## end of file
         if not row:
-            db_model.nextCharacter(hash_id)
+            print "EOF"
+            db_model.nextCharacter(target)
             break
-        if ((rowcount > progress) & (rowcount < progress + db_model.CHUNK_SIZE)):
-            result.append(row)
+        if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
+            result.append(row.rstrip())
+            readrows += 1
         rowcount += 1
 
     resp = dict()
     resp["target"] = target
-    resp["words"] = result;
+    resp["words"] = result
+    db_model.setClientWorking(target, client_id)
     return json.dumps(resp)
 
 
-@app.route('/next/<client_id>')
-def next(client_id):
+@app.route('/next', methods=['POST'])
+def next():
     db_model.killThemDead()
+    for k in request.form:
+        client_id = str(request.form[k])
     if not client_id:
         return "No client id given."
     result = []
-    character, progress = getProgress(client_id)
+    target, character, progress = db_model.getProgress(client_id)
     if character == None:
-        return "Could not find progress for client_id = " + client_id
+        "Could not find progress for client_id = " + client_id
+        target, character, progress = db_model.getNextHash()
 
     f = open("wordlists/dictionary_huge_" + character + ".dic", 'r')
     rowcount = 0
-    for row in f.readlines():
+    readrows = 0
+    while readrows < db_model.CHUNK_SIZE:
+        row = f.readline()
         ## end of file
         if not row:
-            db_model.nextCharacter(hash_id)
+            print "EOF"
+            db_model.nextCharacter(target)
             break
-        if ((rowcount > progress) & (rowcount < progress + db_model.CHUNK_SIZE)):
-            result.append(row)
+        if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
+            result.append(row.rstrip())
+            readrows += 1
+        rowcount += 1
 
-    return json.dumps(result)
+
+    resp = dict()
+    resp["target"] = target
+    resp["words"] = result;
+    db_model.setClientWorking(target, client_id)
+    return json.dumps(resp)
+
+@app.route('/found')
+def found():
+    print "Found the result"
+    return ":)(:"
 
 @app.route('/')
 def server_ui():
