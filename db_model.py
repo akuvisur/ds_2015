@@ -83,8 +83,10 @@ def getProgress(client_id):
     if not found:
         return None, None, None
 
-    sql = "SELECT hash FROM hashes WHERE id = " + str(hash_id)
+    sql = "SELECT hash FROM hashes WHERE id = " + str(hash_id) + " AND solved = 0 AND solvable = 1"
     cur.execute(sql)
+    if not row:
+        return getNextHash()
     for row in cur:
         target = str(row[0])
     nextChunk(hash_id)
