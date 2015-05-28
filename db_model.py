@@ -4,7 +4,7 @@ from sqlite3 import IntegrityError
 import time
 
 DATABASE_FILE = "ds2015.db"
-CHUNK_SIZE = 500000
+CHUNK_SIZE = 250000
 
 def init():
     cur, conn = getCursor()
