@@ -16,7 +16,7 @@ def hash():
     if request.method == 'POST':
         for k in request.form:
             resp = db_model.post_hash(k)
-        return json.dumps(resp)
+            return json.dumps(resp)
     else:
         return json.dumps(db_model.getUnsolvedHashes())
 
@@ -32,17 +32,6 @@ def disconnect():
         resp = db_model.disconnect(request.form[k])
     return resp
 
-@app.route('/ping/<client_id>', methods=['GET', 'POST'])
-def ping():
-    if method == 'POST':
-        for k in request.form:
-            resp = db_model.ping(request.form[k])
-            return resp
-    if method == 'GET':
-        for k in request.form:
-            resp = db_model.getPing(request.form[k])
-            return resp
-
 @app.route('/start_crack', methods=['POST'])
 def start_crack():
     result = []
@@ -52,7 +41,6 @@ def start_crack():
         return "No client id given."
     print "starting " + client_id
     if client_id == "aaaaa":
-        print "Mita vittuaaa?"
         return 0
     target, character, progress = db_model.getNextHash()
     if not character:
@@ -114,10 +102,20 @@ def next():
     db_model.setClientWorking(target, client_id)
     return json.dumps(resp)
 
-@app.route('/found')
+@app.route('/found', methods=['POST'])
 def found():
-    print "Found the result"
+    print "FOUND IT"
+    for k in request.form:
+        solution = request.form["solution"]
+        target = request.form["target"]
+        db_model.solve(target, solution)
     return ":)(:"
+
+@app.route('/ping', methods=['POST'])
+def ping():
+    for k in request.form:
+        return db_model.ping(request.form[k])
+
 
 @app.route('/')
 def server_ui():
@@ -138,6 +136,7 @@ def server_ui():
     for h in unsolvedHashes:
         resp += '''
             <div class='hash_row'>
+                <div class='hash_id'>ID: ''' + str(h[0]) + '''</div>
                 <div class='hash_string'>Hash:    ''' + str(h[1]) + '''</div>
                 <div class='hash_start'>Created: ''' + str(h[2]) + '''</div>
             </div>
@@ -167,8 +166,8 @@ def server_ui():
             <div class='hash_row_solved'>
                 <div class='hash_string'>Hash:    ''' + str(h[1]) + '''</div>
                 <div class='hash_start'>Created: ''' + str(h[2]) + '''</div>
-                <div class='hash_solution'>Solution: ''' + str(h[5]) + '''</div>
-                <div class='hash_solution_time'>Solved on : ''' + str(h[3]) + '''</div>
+                <div class='hash_solution'>Solution: ''' + str(h[6]) + '''</div>
+                <div class='hash_solution_time'>Solved on : ''' + str(h[4]) + '''</div>
             </div>
         '''
 

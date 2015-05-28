@@ -69,7 +69,7 @@ def getSolvedHashes():
 
 
 def getProgress(client_id):
-    print "getprogress"
+    ##print "getprogress"
     hash_id = 0
     cur, conn = getCursor()
     sql = "SELECT hash_working FROM clients WHERE id = '" + str(client_id) + "'"
@@ -137,7 +137,7 @@ def setClientWorking(target, client_id):
     conn.commit()
 
 def nextChunk(hash_id):
-    print "nextchunk"
+    ##print "nextchunk"
     cur, conn = getCursor()
     cur.execute("SELECT row FROM progress WHERE hash_id = '" + str(hash_id) + "'")
     found = False
@@ -153,7 +153,7 @@ def nextChunk(hash_id):
 
 
 def nextCharacter(target_hash):
-    print "Nextcharacter"
+    ##print "Nextcharacter"
     cur, conn = getCursor()
     cur.execute("SELECT id FROM hashes WHERE hash = '" + target_hash + "'")
     for row in cur:
@@ -168,6 +168,11 @@ def nextCharacter(target_hash):
         couldNotSolve(hash_id)
         return 0
     cur.execute("UPDATE progress SET character = '" + str(new_char) + "', row = 0 WHERE hash_id = '" + str(hash_id) + "'")
+    conn.commit()
+
+def solve(target, solution):
+    cur, conn = getCursor()
+    cur.execute("UPDATE hashes SET solved = 1, solution = '" + str(solution) + "' WHERE hash = '" + target + "'")
     conn.commit()
 
 def couldNotSolve(hash_id):
@@ -218,7 +223,7 @@ def disconnect(client_id):
 def ping(client_id):
     cur, conn = getCursor()
     now = time.time()
-    cur.execute("UPDATE clients SET last_ping = " + now + " WHERE id = '" + str(client_id) + "'")
+    cur.execute("UPDATE clients SET last_ping = " + str(now) + " WHERE id = '" + str(client_id) + "'")
     conn.commit()
     return str(now)
 
