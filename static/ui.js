@@ -12,6 +12,7 @@ $(document).ready(function() {
             	console.log(obj);
                 $('.hashes').append(
 	                "<div class='hash_row'>" + 
+                    "<div class='hash_id'>ID: " + obj[0] + "</div>" + 
 	                "<div class='hash_string'>Hash:    " + obj[1] + "</div>" +
 	                "<div class='hash_start'>Created: " + obj[2] + "</div>" +
 	           		"</div>"

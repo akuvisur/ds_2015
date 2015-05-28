@@ -1,3 +1,4 @@
+from argparse import _ActionsContainer
 from flask import Flask, url_for, request
 import json
 import db_model
@@ -38,7 +39,7 @@ def start_crack():
         client_id = str(request.form[k])
     if not client_id:
         return "No client id given."
-    print "starting " + client_id
+    #print "starting " + client_id
     if client_id == "aaaaa":
         return 0
     target, character, progress = db_model.getNextHash()
@@ -51,7 +52,7 @@ def start_crack():
         row = f.readline()
         ## end of file
         if not row:
-            print "EOF"
+            #print "EOF"
             db_model.nextCharacter(target)
             break
         if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
@@ -75,10 +76,17 @@ def next():
         return "No client id given."
     result = []
     target, character, progress = db_model.getProgress(client_id)
-    if character == None:
+    if not character:
         "Could not find progress for client_id = " + client_id
         target, character, progress = db_model.getNextHash()
 
+    if not target:
+        resp = dict()
+        resp["target"] = "No hashes to solve."
+        result = []
+        result.append("No hashes to solve.")
+        resp["words"] = result
+        return json.dumps(resp)
     f = open("wordlists/dictionary_huge_" + character + ".dic", 'r')
     rowcount = 0
     readrows = 0
@@ -86,7 +94,7 @@ def next():
         row = f.readline()
         ## end of file
         if not row:
-            print "EOF"
+            #print "EOF"
             db_model.nextCharacter(target)
             break
         if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
@@ -103,7 +111,7 @@ def next():
 
 @app.route('/found', methods=['POST'])
 def found():
-    print "FOUND IT"
+    #print "FOUND IT"
     for k in request.form:
         solution = request.form["solution"]
         target = request.form["target"]

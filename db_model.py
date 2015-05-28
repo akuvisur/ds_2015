@@ -69,7 +69,7 @@ def getSolvedHashes():
 
 
 def getProgress(client_id):
-    ##print "getprogress"
+    ###print "getprogress"
     hash_id = 0
     cur, conn = getCursor()
     sql = "SELECT hash_working FROM clients WHERE id = '" + str(client_id) + "'"
@@ -94,9 +94,9 @@ def getProgress(client_id):
         return None, None, None
     for row in cur:
         updateClient(hash_id, row[0], row[1])
-        print "target = " + str(target)
-        print "character = " + str(row[0])
-        print "row = " + str(row[1])
+        #print "target = " + str(target)
+        #print "character = " + str(row[0])
+        #print "row = " + str(row[1])
         return target, row[0], row[1]
 
 def getNextHash():
@@ -104,7 +104,7 @@ def getNextHash():
     cur.execute("SELECT id, hash FROM hashes WHERE solved = 0 AND solvable = 1 ORDER BY created_time LIMIT 1")
     found = False
     for row in cur:
-        print row[0]
+        #print row[0]
         hash_id = row[0]
         target = row[1]
         found = True
@@ -117,7 +117,7 @@ def getNextHash():
     cur, conn = getCursor()
     cur.execute(sql)
     for row in cur:
-        print "searching for " + str(target) + " " + str(row[1]) + " " + str(row[2])
+        #print "searching for " + str(target) + " " + str(row[1]) + " " + str(row[2])
         updateClient(hash_id, row[1], row[2])
         return target, row[1], row[2]
 
@@ -135,16 +135,17 @@ def setClientWorking(target, client_id):
         hash_id = row[0]
     cur.execute("UPDATE clients SET hash_working = '" + str(hash_id) + "' WHERE id = '" + str(client_id) + "'")
     conn.commit()
+    ping(client_id)
 
 def nextChunk(hash_id):
-    ##print "nextchunk"
+    ###print "nextchunk"
     cur, conn = getCursor()
     cur.execute("SELECT row FROM progress WHERE hash_id = '" + str(hash_id) + "'")
     found = False
     for row in cur:
         curRow = row[0]
         found = True
-        ##print "found"
+        ###print "found"
     if not found:
         return 0
     cur.execute("UPDATE progress SET row = " + str(curRow + CHUNK_SIZE))
@@ -153,7 +154,7 @@ def nextChunk(hash_id):
 
 
 def nextCharacter(target_hash):
-    ##print "Nextcharacter"
+    ###print "Nextcharacter"
     cur, conn = getCursor()
     cur.execute("SELECT id FROM hashes WHERE hash = '" + target_hash + "'")
     for row in cur:
@@ -195,7 +196,7 @@ def post_hash(hash):
 def connectClient(client_id):
     cur, conn = getCursor()
 
-    print "connecting " + client_id
+    #print "connecting " + client_id
     try:
         cur.execute("INSERT INTO clients (id, join_time, last_ping) VALUES ('"+str(client_id)+"', "+str(time.time())+"," +str(time.time())+")")
         conn.commit()
@@ -217,14 +218,17 @@ def disconnect(client_id):
     cur.execute("DELETE FROM clients WHERE id = '" + str(client_id) + "'")
     conn.commit()
     conn.close()
-    print "Disconnected " + str(client_id)
+    #print "Disconnected " + str(client_id)
     return "Deleted"
 
 def ping(client_id):
     cur, conn = getCursor()
     now = time.time()
+    #print "ping : " + str(now)
+    #print "client : " + str(client_id)
     cur.execute("UPDATE clients SET last_ping = " + str(now) + " WHERE id = '" + str(client_id) + "'")
     conn.commit()
+    cur.close()
     return str(now)
 
 def getPing(client_id):
@@ -237,10 +241,13 @@ def getPing(client_id):
 def killThemDead():
     cur, conn = getCursor()
     now = time.time()
+    #print "killing, now = " + str(now)
     cur.execute("SELECT id, last_ping FROM clients")
     for row in cur:
+        #print "client last_ping = " + str(row[1])
+        #print "diff = " + str(now - float(row[1]))
         # if client not responed for 60 seconds
-        if (now - row[1]) > 90:
+        if (now - float(row[1])) > 90.0:
             cur.execute("DELETE FROM clients WHERE id ='" + str(row[0]) + "'")
             conn.commit()
 
