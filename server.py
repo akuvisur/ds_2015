@@ -1,4 +1,4 @@
-from argparse import _ActionsContainer
+from argparse import ActionsContainer
 from flask import Flask, url_for, request
 import json
 import db_model
@@ -178,4 +178,7 @@ def server_ui():
 if __name__ == '__main__':
     db_model.init()
     app.debug = DEBUG
-    app.run()
+    ## if public
+    app.run(host='0.0.0.0')
+    ## if private
+    #app.run()
