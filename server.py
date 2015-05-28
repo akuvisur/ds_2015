@@ -55,10 +55,11 @@ def start_crack():
             #print "EOF"
             db_model.nextCharacter(target)
             break
-        if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
+        if ((rowcount <= progress + db_model.CHUNK_SIZE) & (rowcount >= progress)):
             result.append(row.rstrip())
             readrows += 1
         rowcount += 1
+    f.close()
 
     resp = dict()
     resp["target"] = target
@@ -86,10 +87,12 @@ def next():
         result = []
         result.append("No hashes to solve.")
         resp["words"] = result
+        print "nothing to solve"
         return json.dumps(resp)
     f = open("wordlists/dictionary_huge_" + character + ".dic", 'r')
     rowcount = 0
     readrows = 0
+
     while readrows < db_model.CHUNK_SIZE:
         row = f.readline()
         ## end of file
@@ -97,15 +100,16 @@ def next():
             #print "EOF"
             db_model.nextCharacter(target)
             break
-        if ((rowcount > progress) & (rowcount <= progress + db_model.CHUNK_SIZE)):
+        if ((rowcount <= progress + db_model.CHUNK_SIZE) & (rowcount >= progress)):
             result.append(row.rstrip())
             readrows += 1
         rowcount += 1
-
+    f.close()
 
     resp = dict()
     resp["target"] = target
-    resp["words"] = result;
+    resp["words"] = result
+
     db_model.setClientWorking(target, client_id)
     return json.dumps(resp)
 
@@ -186,6 +190,6 @@ if __name__ == '__main__':
     db_model.init()
     app.debug = DEBUG
     ## if public
-    app.run(host='0.0.0.0')
+    #app.run(host='0.0.0.0')
     ## if private
-    #app.run()
+    app.run()

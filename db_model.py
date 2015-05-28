@@ -1,9 +1,10 @@
 from argparse import _ActionsContainer
 import sqlite3 as sql
+from sqlite3 import IntegrityError
 import time
 
 DATABASE_FILE = "ds2015.db"
-CHUNK_SIZE = 200000
+CHUNK_SIZE = 500000
 
 def init():
     cur, conn = getCursor()
@@ -11,7 +12,7 @@ def init():
        CREATE TABLE IF NOT EXISTS hashes
        (
        id INTEGER PRIMARY KEY ASC,
-       hash TEXT,
+       hash TEXT UNIQUE,
        created_time REAL,
        started_time REAL,
        solved_time REAL,
@@ -71,35 +72,18 @@ def getSolvedHashes():
 def getProgress(client_id):
     ###print "getprogress"
     hash_id = 0
+    target = ""
     cur, conn = getCursor()
-    sql = "SELECT hash_working FROM clients WHERE id = '" + str(client_id) + "'"
+    sql = "SELECT clients.hash_working FROM clients JOIN hashes ON hashes.id = clients.hash_working WHERE clients.id = '" + str(client_id) + "' AND hashes.solvable = 1"
     cur.execute(sql)
     found = False
     for row in cur:
         hash_id = row[0]
         if not hash_id:
             return None, None, None
-        found = True
     if not found:
-        return None, None, None
-
-    sql = "SELECT hash FROM hashes WHERE id = " + str(hash_id) + " AND solved = 0 AND solvable = 1"
-    cur.execute(sql)
-    if not row:
         return getNextHash()
-    for row in cur:
-        target = str(row[0])
-    nextChunk(hash_id)
-    sql = "SELECT character, row FROM progress WHERE hash_id = '" + str(hash_id) + "'"
-    cur.execute(sql)
-    if not row:
-        return None, None, None
-    for row in cur:
-        updateClient(hash_id, row[0], row[1])
-        #print "target = " + str(target)
-        #print "character = " + str(row[0])
-        #print "row = " + str(row[1])
-        return target, row[0], row[1]
+
 
 def getNextHash():
     cur, conn = getCursor()
@@ -110,17 +94,17 @@ def getNextHash():
         hash_id = row[0]
         target = row[1]
         found = True
-        ## taanne paasee
     if not found:
         return None, None, None
-    nextChunk(hash_id)
-    sql = "SELECT * FROM progress WHERE hash_id = '" + str(hash_id) + "'"
+
+    sql = "SELECT hashes.solvable, progress.character, progress.row FROM progress JOIN hashes ON hashes.id = progress.hash_id WHERE hash_id = '" + str(hash_id) + "'"
     cur.close()
     cur, conn = getCursor()
     cur.execute(sql)
     for row in cur:
-        #print "searching for " + str(target) + " " + str(row[1]) + " " + str(row[2])
         updateClient(hash_id, row[1], row[2])
+        nextChunk(hash_id)
+        #print "returning " + target + str(row[1]) + str(row[2])
         return target, row[1], row[2]
 
 # update client progress
@@ -156,14 +140,14 @@ def nextChunk(hash_id):
 
 
 def nextCharacter(target_hash):
-    ###print "Nextcharacter"
     cur, conn = getCursor()
-    cur.execute("SELECT id FROM hashes WHERE hash = '" + target_hash + "'")
+    cur.execute("SELECT id FROM hashes WHERE hash = '" + target_hash + "' AND solvable = 1 AND solved = 0")
     for row in cur:
         hash_id = row[0]
     cur.execute("SELECT character FROM progress WHERE hash_id = '" + str(hash_id) + "'")
     for row in cur:
         curChar = row[0]
+
     ## if not end of alphabets
     if ord(curChar) < 122:
         new_char = chr(ord(curChar) + 1)
@@ -180,15 +164,21 @@ def solve(target, solution):
 
 def couldNotSolve(hash_id):
     cur, conn = getCursor()
+    print "setting " + str(hash_id) + " to unsolvable"
     cur.execute("UPDATE hashes SET solvable = 0 WHERE id = '" + str(hash_id) + "'")
     conn.commit()
 
 def post_hash(hash):
     cur, conn = getCursor()
     sql = "INSERT INTO hashes (hash, created_time) VALUES ('" + str(hash) + "'," + str(time.time()) + ")"
-    cur.execute(sql)
-    conn.commit()
-    lastid = cur.lastrowid
+    try:
+        cur.execute(sql)
+        conn.commit()
+        lastid = cur.lastrowid
+    except IntegrityError:
+        conn.close()
+        return "Hash already exists"
+
     cur.execute("INSERT INTO progress VALUES (" + str(lastid) + ",'a', 1)")
     conn.commit()
     cur.execute("SELECT * FROM hashes WHERE id = " + str(lastid))
