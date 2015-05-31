@@ -23,20 +23,24 @@ def hash():
 @app.route('/join', methods=['POST'])
 def join():
     for k in request.form:
-        resp = db_model.connectClient(request.form[k])
+        resp = db_model.connectClient(request.form[k].encode('rot13'))
     return resp
 
 @app.route('/disconnect', methods=['POST'])
 def disconnect():
     for k in request.form:
-        resp = db_model.disconnect(request.form[k])
+        resp = db_model.disconnect(request.form[k].encode('rot13'))
     return resp
 
 @app.route('/start_crack', methods=['POST'])
 def start_crack():
     result = []
-    for k in request.form:
-        client_id = str(request.form[k])
+    client_id = str(request.form["client_id"].encode('rot13'))
+    db_model.executeWork(
+        request.form["target"].encode('rot13'),
+        request.form["character"].encode('rot13'),
+        request.form["progress"].encode('rot13')
+    )
     if not client_id:
         return "No client id given."
     #print "starting " + client_id
@@ -52,27 +56,40 @@ def start_crack():
         row = f.readline()
         ## end of file
         if not row:
-            #print "EOF"
-            db_model.nextCharacter(target)
-            break
+            ## EOF
+            f.close()
+            newtarget, newchar, newprog = db_model.nextCharacter(target)
+            if not newtarget:
+                break
+            else:
+                for row in readfile(newchar, newprog):
+                    result.append(row)
+                break
         if ((rowcount <= progress + db_model.CHUNK_SIZE) & (rowcount >= progress)):
-            result.append(row.rstrip())
+            result.append(row.rstrip().encode('rot13'))
             readrows += 1
         rowcount += 1
     f.close()
 
     resp = dict()
-    resp["target"] = target
+    resp["char"] = character.encode('rot13')
+    resp["progress"] = str(progress).encode('rot13')
+    resp["target"] = target.encode('rot13')
     resp["words"] = result
     db_model.setClientWorking(target, client_id)
+    db_model.addWork(target, character, progress)
     return json.dumps(resp)
 
 
 @app.route('/next', methods=['POST'])
 def next():
     db_model.killThemDead()
-    for k in request.form:
-        client_id = str(request.form[k])
+    client_id = str(request.form["client_id"].encode('rot13'))
+    db_model.executeWork(
+        request.form["target"].encode('rot13'),
+        request.form["character"].encode('rot13'),
+        request.form["progress"].encode('rot13')
+    )
     if not client_id:
         return "No client id given."
     result = []
@@ -98,34 +115,63 @@ def next():
         ## end of file
         if not row:
             #print "EOF"
-            db_model.nextCharacter(target)
-            break
+            f.close()
+            newtarget, newchar, newprog = db_model.nextCharacter(target)
+            if not newtarget:
+                break
+            else:
+                for row in readfile(newchar, newprog):
+                    result.append(row)
+                break
+
         if ((rowcount <= progress + db_model.CHUNK_SIZE) & (rowcount >= progress)):
-            result.append(row.rstrip())
+            result.append(row.rstrip().encode('rot13'))
             readrows += 1
         rowcount += 1
     f.close()
 
     resp = dict()
-    resp["target"] = target
+    resp["char"] = character.encode('rot13')
+    resp["progress"] = str(progress).encode('rot13')
+    resp["target"] = target.encode('rot13')
     resp["words"] = result
 
     db_model.setClientWorking(target, client_id)
+    db_model.addWork(target, character, progress)
     return json.dumps(resp)
+
+def readfile(character, progress):
+    print "read file!"
+    f = open("wordlists/dictionary_huge_" + character + ".dic", 'r')
+    rowcount = 0
+    readrows = 0
+
+    while readrows < db_model.CHUNK_SIZE:
+        row = f.readline()
+        ## end of file
+        if not row:
+            #print "EOF"
+            break
+
+        if ((rowcount <= progress + db_model.CHUNK_SIZE) & (rowcount >= progress)):
+            yield row.rstrip().encode('rot13')
+            readrows += 1
+        rowcount += 1
+    f.close()
+
 
 @app.route('/found', methods=['POST'])
 def found():
     #print "FOUND IT"
-    for k in request.form:
-        solution = request.form["solution"]
-        target = request.form["target"]
-        db_model.solve(target, solution)
+    solution = request.form["solution"]
+    target = request.form["target"]
+    db_model.solve(target, solution)
     return ":)(:"
 
 @app.route('/ping', methods=['POST'])
 def ping():
     for k in request.form:
-        return db_model.ping(request.form[k])
+        return db_model.ping(request.form[k].encode('rot13'))
 
 
 @app.route('/')
@@ -190,6 +236,6 @@ if __name__ == '__main__':
     db_model.init()
     app.debug = DEBUG
     ## if public
-    app.run(host='0.0.0.0')
+    #app.run(host='0.0.0.0')
     ## if private
-    #app.run()
+    app.run()

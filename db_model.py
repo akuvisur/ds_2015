@@ -41,6 +41,43 @@ def init():
         )
     ''')
 
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS work
+        (
+        id INTEGER PRIMARY KEY ASC,
+        hash_id INTEGER REFERENCES hashes(id) ON DELETE CASCADE,
+        character TEXT,
+        progress REAL,
+        done INTEGER DEFAULT 0
+        )
+    ''')
+
+def addWork(target, character, progress):
+    cur, conn = getCursor()
+    cur.execute("SELECT id FROM hashes WHERE hash = '" + str(target) + "'")
+    for row in cur:
+        hash_id = row[0]
+    cur.execute("INSERT INTO work (hash_id, character, progress) VALUES ("+str(hash_id)+",'"+str(character)+"','"+str(progress)+"')")
+    conn.commit()
+
+def executeWork(target, character, progress):
+    print "executing work " + str(target) + str(character) + str(progress)
+    if len(target) == 0:
+        return 0
+    cur, conn = getCursor()
+    cur.execute("SELECT id FROM hashes WHERE hash = '" + str(target) + "'")
+    for row in cur:
+        hash_id = row[0]
+    cur.execute("UPDATE work SET done = 1 WHERE hash_id = '" + str(hash_id) + "' AND character = '"+str(character)+"' AND progress='"+str(progress)+"'")
+    conn.commit()
+
+def getUnfinishedWork():
+    cur, conn = getCursor()
+    cur.execute("SELECT hashes.hash, character, progress FROM work JOIN hashes ON hashes.id = work.hash_id WHERE done = 0")
+    for row in cur:
+        return str(row[0]), str(row[1]), row[2]
+    return None, None, None
+
 def getClients():
     result = []
     cur, conn = getCursor()
@@ -86,6 +123,7 @@ def getProgress(client_id):
 
 
 def getNextHash():
+
     cur, conn = getCursor()
     cur.execute("SELECT id, hash FROM hashes WHERE solved = 0 AND solvable = 1 ORDER BY created_time LIMIT 1")
     found = False
@@ -106,6 +144,7 @@ def getNextHash():
         nextChunk(hash_id)
         #print "returning " + target + str(row[1]) + str(row[2])
         return target, row[1], row[2]
+
 
 # update client progress
 def updateClient(hash_id, character, row):
@@ -141,6 +180,7 @@ def nextChunk(hash_id):
 
 def nextCharacter(target_hash):
     cur, conn = getCursor()
+
     cur.execute("SELECT id FROM hashes WHERE hash = '" + target_hash + "' AND solvable = 1 AND solved = 0")
     for row in cur:
         hash_id = row[0]
@@ -148,14 +188,20 @@ def nextCharacter(target_hash):
     for row in cur:
         curChar = row[0]
 
+    new_char = ""
     ## if not end of alphabets
     if ord(curChar) < 122:
         new_char = chr(ord(curChar) + 1)
     else:
-        couldNotSolve(hash_id)
-        return 0
+        target, character, progress = getUnfinishedWork()
+        if not target:
+            couldNotSolve(hash_id)
+        return target, character, progress
+
     cur.execute("UPDATE progress SET character = '" + str(new_char) + "', row = 0 WHERE hash_id = '" + str(hash_id) + "'")
     conn.commit()
+    return None, None, None
+    
 
 def solve(target, solution):
     cur, conn = getCursor()
